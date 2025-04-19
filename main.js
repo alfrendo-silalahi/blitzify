@@ -1,23 +1,28 @@
 import Fastify from "fastify";
+import dotenv from "dotenv";
+import fastifyMysql from "@fastify/mysql";
+
+dotenv.config();
 
 const fastify = Fastify({ logger: true });
-
-fastify.get("/", function (request, reply) {
-  reply.send({ message: "Hello world!" });
-});
-
-fastify.get("/hello", function (request, reply) {
-  reply.send({ message: "Hello Alfrendo, welcome to Fastify" });
+fastify.register(fastifyMysql, {
+  connectionString: process.env.DB_URL,
 });
 
 fastify.get("/api/users", function (request, reply) {
-  const { page, limit } = request.query;
-  reply.send({ page, limit });
+  fastify.mysql.query("SELECT * FROM users", function onResult(err, result) {
+    reply.send(result);
+  });
 });
 
 fastify.get("/api/users/:userId", function (request, reply) {
-  const { userId } = request.params;
-  reply.send({ userId });
+  fastify.mysql.query(
+    "SELECT * FROM users WHERE id = ?",
+    request.params.userId,
+    function onResult(err, result) {
+      reply.send(result);
+    }
+  );
 });
 
 fastify.listen({ port: 3000 }, function (err, address) {
